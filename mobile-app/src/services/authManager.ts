@@ -1,24 +1,14 @@
-// mobile-app/src/hooks/useAuth.ts
+// src/services/authManager.ts
 import { useState, useEffect } from 'react';
-import { getToken, loginUser, registerUser, logoutUser } from '@/services/authService';
+import { getToken, loginUser, registerUser, logoutUser } from './authService'; // Importa do serviço local
 
-// Interfaces simplificadas
 interface AuthData {
   username: string;
   password: string;
 }
 
-interface AuthHook {
-  signed: boolean;
-  user: { id: number; username: string } | null;
-  loading: boolean;
-  signIn(data: AuthData): Promise<void>;
-  signUp(data: AuthData): Promise<void>;
-  signOut(): void;
-}
-
-// Hook Customizado: Gerencia o estado e a lógica de autenticação
-export function useAuth(): AuthHook {
+// Este hook simples gerencia o estado localmente
+export function useAuthManager() {
   const [user, setUser] = useState<{ id: number; username: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,15 +17,12 @@ export function useAuth(): AuthHook {
     async function loadStorageData() {
       const token = await getToken();
       if (token) {
-        // Mocka o usuário (em produção, decodificaria o token)
         setUser({ id: 1, username: 'mockUser' }); 
       }
       setLoading(false);
     }
     loadStorageData();
   }, []);
-
-  // Funções de Ação
 
   async function signIn(data: AuthData) {
     try {
@@ -61,8 +48,7 @@ export function useAuth(): AuthHook {
     logoutUser();
     setUser(null);
   }
-  
-  // Retorna o estado e as funções para o componente usar
+
   return {
     signed: !!user,
     user,
