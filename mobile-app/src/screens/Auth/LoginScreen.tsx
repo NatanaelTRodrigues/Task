@@ -1,57 +1,69 @@
 // mobile-app/src/screens/Auth/LoginScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
-import { useAuthManager } from '@/services/authManager';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useAuthManager } from '@/hooks/useAuthManager';
+import Input from '@/components/Input';
 
-const LoginScreen: React.FC = ({ navigation }: any) => {
-  const { signIn, loading } = useAuthManager(); 
+export default function LoginScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuthManager();
 
   const handleLogin = async () => {
-    setError('');
     if (!username || !password) {
-        setError('Preencha todos os campos.');
-        return;
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      return;
     }
+
+    setIsLoading(true);
     try {
-        await signIn({ username, password });
-    } catch (e: any) {
-        setError(e.response?.data || 'Falha ao conectar ou credenciais inválidas.');
+      await signIn({ username, password });
+      // A navegação será tratada automaticamente pelo Routes.tsx
+    } catch (error: any) {
+      Alert.alert('Erro no Login', error.message || 'Credenciais inválidas ou erro de conexão.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Fazer Login</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TextInput
-        placeholder="Usuário"
+      <Text style={styles.title}>Login TaskFlow Mobile</Text>
+
+      <Input
+        label="Usuário"
         value={username}
         onChangeText={setUsername}
-        style={styles.input}
+        autoCapitalize="none"
       />
-      <TextInput
-        placeholder="Senha"
+      <Input
+        label="Senha"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        style={styles.input}
       />
-      <Button title={loading ? 'Carregando...' : 'Entrar'} onPress={handleLogin} disabled={loading} />
-      <Button title="Criar Conta" onPress={() => navigation.navigate('Register')} />
-      {loading && <ActivityIndicator size="large" style={styles.loading} />}
+
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Entrar</Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.link}>Não tem conta? Cadastre-se</Text>
+      </TouchableOpacity>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 15, padding: 10 },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
-  loading: { marginTop: 20 },
+  // ... (Estilos básicos)
+  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f4f4f4' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 30, textAlign: 'center' },
+  button: { backgroundColor: '#3b82f6', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  link: { color: '#3b82f6', marginTop: 20, textAlign: 'center', fontSize: 16 },
 });
-
-export default LoginScreen;

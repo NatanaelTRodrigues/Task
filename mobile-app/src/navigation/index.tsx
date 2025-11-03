@@ -1,19 +1,21 @@
 // mobile-app/src/navigation/index.tsx
 import React from 'react';
+// Usaremos o Stack (navegação) diretamente aqui
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
+import { createStackNavigator } from '@react-navigation/stack'; // USAMOS O @react-navigation/stack
 import { ActivityIndicator, View } from 'react-native';
-import { AuthRoutes } from './AuthRoutes';
-import { AppRoutes } from './AppRoutes'; 
-import { useAuthManager } from '@/services/authManager';
 
-const Stack = createNativeStackNavigator();
+import { useAuthManager } from '@/hooks/useAuthManager'; 
+import LoginScreen from '@/screens/Auth/LoginScreen'; 
+import RegisterScreen from '@/screens/Auth/RegisterScreen'; 
+import DashboardScreen from '@/screens/DashboardScreen'; 
+
+const AppStack = createStackNavigator();
 
 export default function Routes() {
-  const { signed, loading } = useAuthManager(); 
+  const { signed, loading } = useAuthManager(); // Nosso hook customizado
 
   if (loading) {
-    // Exibe tela de loading enquanto verifica o token AsyncStorage
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -23,16 +25,18 @@ export default function Routes() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Decide qual conjunto de rotas carregar */}
+      <AppStack.Navigator screenOptions={{ headerShown: false }}>
         {signed ? (
-          // Rotas Protegidas (Dashboard, Tarefas)
-          <Stack.Screen name="AppRoutes" component={AppRoutes} />
+          // Rotas Protegidas
+          <AppStack.Screen name="Dashboard" component={DashboardScreen} />
         ) : (
-          // Rotas Públicas (Login, Cadastro)
-          <Stack.Screen name="AuthRoutes" component={AuthRoutes} />
+          // Rotas Públicas
+          <>
+            <AppStack.Screen name="Login" component={LoginScreen} />
+            <AppStack.Screen name="Register" component={RegisterScreen} />
+          </>
         )}
-      </Stack.Navigator>
+      </AppStack.Navigator>
     </NavigationContainer>
   );
 }

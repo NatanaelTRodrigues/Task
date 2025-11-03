@@ -1,59 +1,70 @@
 // mobile-app/src/screens/Auth/RegisterScreen.tsx
-import { useAuthManager } from '@/services/authManager';
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useAuthManager } from '@/hooks/useAuthManager';
+import Input from '@/components/Input';
 
-
-const RegisterScreen: React.FC = ({ navigation }: any) => {
-  const { signUp, loading } = useAuthManager(); 
+export default function RegisterScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuthManager();
 
   const handleRegister = async () => {
-    setError('');
     if (!username || !password) {
-        setError('Preencha todos os campos.');
-        return;
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      return;
     }
-    try {
-        await signUp({ username, password });
 
-    } catch (e: any) {
-        setError(e.response?.data || 'Falha no registro. O usuário pode já existir.');
+    setIsLoading(true);
+    try {
+      await signUp({ username, password });
+      Alert.alert('Sucesso', 'Usuário registrado! Faça o login.');
+      navigation.navigate('Login'); 
+    } catch (error: any) {
+      Alert.alert('Erro no Registro', error.message || 'Erro de conexão ou usuário já existe.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Criar Conta</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TextInput
-        placeholder="Nome de Usuário"
+      <Text style={styles.title}>Criar Conta Mobile</Text>
+
+      <Input
+        label="Usuário"
         value={username}
         onChangeText={setUsername}
-        style={styles.input}
+        autoCapitalize="none"
       />
-      <TextInput
-        placeholder="Senha"
+      <Input
+        label="Senha"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        style={styles.input}
       />
-      <Button title={loading ? 'Carregando...' : 'Registrar'} onPress={handleRegister} disabled={loading} />
-      <Button title="Voltar ao Login" onPress={() => navigation.navigate('Login')} />
-      {loading && <ActivityIndicator size="large" style={styles.loading} />}
+
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Registrar</Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <Text style={styles.link}>Já tem conta? Faça Login</Text>
+      </TouchableOpacity>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 15, padding: 10 },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
-  loading: { marginTop: 20 },
+  // ... (Estilos básicos)
+  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f4f4f4' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 30, textAlign: 'center' },
+  button: { backgroundColor: '#10b981', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  link: { color: '#3b82f6', marginTop: 20, textAlign: 'center', fontSize: 16 },
 });
-
-export default RegisterScreen;
