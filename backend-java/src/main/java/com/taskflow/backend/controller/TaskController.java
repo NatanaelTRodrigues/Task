@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "*") // Permite acesso do frontend
+@CrossOrigin(origins = "*") 
 public class TaskController {
 
     private final TaskService taskService;
@@ -65,5 +65,47 @@ public class TaskController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}")
+public ResponseEntity<TaskResponse> updateTask(
+    @PathVariable Long id,
+    @RequestBody TaskRequest request,
+    @AuthenticationPrincipal UserDetails userDetails // Injeta o usuário autenticado
+) {
+    // 1. Obter o User real
+    User user = userService.findByUsername(userDetails.getUsername());
+
+    // 2. Tentar buscar a tarefa, garantindo a propriedade
+    Task existingTask = taskService.getTaskByIdAndUserId(id, user.getId())
+        .orElseThrow(() -> new RuntimeException("Tarefa não encontrada ou acesso negado."));
+
+    // 3. Aplicar as mudanças
+    existingTask.setTitle(request.getTitle());
+    existingTask.setDescription(request.getDescription());
+    // Se a request tiver um campo 'completed', ele também seria mapeado aqui
+
+    // 4. Salvar e retornar
+    Task updatedTask = taskService.updateTask(existingTask);
+    return ResponseEntity.ok(TaskMapper.toResponse(updatedTask));
+}
+
+// Endpoint DELETE: Remove uma tarefa
+@DeleteMapping("/{id}")
+public ResponseEntity<Void> deleteTask(
+    @PathVariable Long id,
+    @AuthenticationPrincipal UserDetails userDetails
+) {
+    // 1. Obter o User real
+    User user = userService.findByUsername(userDetails.getUsername());
+
+    // 2. Buscar a tarefa, garantindo a propriedade antes de deletar
+    taskService.getTaskByIdAndUserId(id, user.getId())
+        .orElseThrow(() -> new RuntimeException("Tarefa não encontrada ou acesso negado."));
+
+    // 3. Deletar (se a verificação passou)
+    taskService.deleteTask(id);
+
+    // 4. Retornar No Content
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+}
     
 }

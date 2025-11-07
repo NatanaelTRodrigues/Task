@@ -32,6 +32,22 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+        public Optional<Task> getTaskByIdAndUserId(Long taskId, Long userId) {
+    return taskRepository.findById(taskId)
+        .filter(task -> task.getUser().getId().equals(userId));
+}
+
+// ATUALIZAÇÃO: Edita uma tarefa existente
+public Task updateTask(Task taskDetails) {
+    // Assume que a verificação de propriedade foi feita no Controller/Service antes
+    return taskRepository.save(taskDetails);
+}
+
+// EXCLUSÃO: Remove uma tarefa por ID
+public void deleteTask(Long taskId) {
+    taskRepository.deleteById(taskId);
+}
+
     // LEITURA: Busca tarefas por ID do usuário (para o dashboard)
     public List<Task> getTasksByUserId(Long userId) {
         return taskRepository.findByUserId(userId);
