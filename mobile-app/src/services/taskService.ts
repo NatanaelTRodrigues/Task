@@ -18,3 +18,20 @@ export const createTask = async (data: TaskRequest): Promise<ITask> => {
     const response = await api.post<ITask>('/tasks', data);
     return response.data;
 };
+// Toggle Completion (PUT)
+export const toggleTaskCompletion = async (task: ITask): Promise<ITask> => {
+    const updatedData = {
+        title: task.title,
+        description: task.description || '',
+        completed: !task.completed // Inverte o status
+    };
+    // Endpoint: PUT /api/tasks/{id}
+    const response = await api.put<ITask>(`/tasks/${task.id}`, updatedData);
+    return response.data;
+};
+
+//Excluir Tarefa (DELETE)
+export const deleteTask = async (taskId: number): Promise<void> => {
+    // Endpoint: DELETE /api/tasks/{id}
+    await api.delete(`/tasks/${taskId}`);
+};
