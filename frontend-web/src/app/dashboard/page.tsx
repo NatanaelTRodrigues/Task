@@ -1,7 +1,7 @@
-// frontend-web/src/app/dashboard/page.tsx
+// frontend-web/src/app/dashboard/page.tsx (ATUALIZADO)
 'use client';
 import React, { useState, useEffect } from 'react';
-import { getTasks, ITask } from '@/services/taskService';
+import { getTasks, ITask, toggleTaskCompletion, deleteTask } from '@/services/taskService'; // NOVOS IMPORTS
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  // Função para buscar tarefas (reutilizada)
   const fetchTasks = async () => {
     setLoading(true);
     setError('');
@@ -18,7 +19,6 @@ export default function DashboardPage() {
       const data = await getTasks();
       setTasks(data);
     } catch (err: any) {
-      // Se falhar (ex: 401 Unauthorized), redireciona para o login
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem('taskflow_jwt');
         router.push('/auth/login');
@@ -37,6 +37,36 @@ export default function DashboardPage() {
   const handleLogout = () => {
       localStorage.removeItem('taskflow_jwt');
       router.push('/auth/login');
+  };
+
+  // NOVO: Função para alternar status (PUT)
+  const handleToggle = async (task: ITask) => {
+      try {
+          const updatedTask = await toggleTaskCompletion(task);
+          // Atualiza o estado local para refletir a mudança
+          setTasks(prevTasks => 
+              prevTasks.map(t => (t.id === updatedTask.id ? updatedTask : t))
+          );
+      } catch (error) {
+          alert('Falha ao atualizar a tarefa.');
+          console.error(error);
+      }
+  };
+
+  // NOVO: Função para deletar (DELETE)
+  const handleDelete = async (taskId: number) => {
+      if (!window.confirm('Tem certeza que deseja excluir esta tarefa?')) {
+          return;
+      }
+      try {
+          await deleteTask(taskId);
+          // Remove do estado local
+          setTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
+          alert('Tarefa excluída com sucesso!');
+      } catch (error) {
+          alert('Falha ao excluir a tarefa.');
+          console.error(error);
+      }
   };
 
   return (
@@ -58,13 +88,33 @@ export default function DashboardPage() {
             <p className="col-span-3 text-center text-gray-600">Nenhuma tarefa encontrada. Crie sua primeira!</p>
         ) : (
             tasks.map(task => (
-                <div key={task.id} className={`p-5 rounded-lg shadow-md ${task.completed ? 'bg-green-100' : 'bg-white'}`}>
+                <div key={task.id} className={`p-5 rounded-lg shadow-md ${task.completed ? 'bg-green-100 border-l-4 border-green-500' : 'bg-white border-l-4 border-orange-500'}`}>
                     <h2 className="text-xl font-semibold mb-2">{task.title}</h2>
                     <p className="text-gray-600 mb-4">{task.description}</p>
-                    <span className={`text-sm font-medium ${task.completed ? 'text-green-700' : 'text-orange-600'}`}>
-                        Status: {task.completed ? 'Concluída' : 'Pendente'}
-                    </span>
-                    {/* Ações de Update/Delete viriam aqui */}
+
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+                        <span className={`text-sm font-medium ${task.completed ? 'text-green-700' : 'text-orange-600'}`}>
+                            Status: {task.completed ? 'Concluída' : 'Pendente'}
+                        </span>
+
+                        <div className="space-x-2">
+                            {/* Botão de Conclusão/Reabertura */}
+                            <button 
+                                onClick={() => handleToggle(task)}
+                                className={`py-1 px-3 text-sm rounded ${task.completed ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'} text-white transition duration-150`}
+                            >
+                                {task.completed ? 'Reabrir' : 'Concluir'}
+                            </button>
+
+                            {/* Botão de Excluir */}
+                            <button 
+                                onClick={() => handleDelete(task.id)}
+                                className="py-1 px-3 text-sm rounded bg-red-500 hover:bg-red-600 text-white transition duration-150"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
                 </div>
             ))
         )}
